@@ -9,8 +9,7 @@ export const config = {
   // Wallet Connect Configuration
   walletConnectProjectId: "YOUR_WALLET_CONNECT_PROJECT_ID",
   
-  // Infura Configuration
-  infuraApiKey: "YOUR_INFURA_API_KEY",
+  // Alternative RPC Configuration
   alternativeRpcUrl: "https://1rpc.io/sepolia",
   
   // Contract Configuration (set after deployment)

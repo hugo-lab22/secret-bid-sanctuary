@@ -1,16 +1,15 @@
 // Configuration file for Secret Bid Sanctuary
 export const config = {
   // Chain Configuration
-  chainId: 11155111, // Sepolia
-  rpcUrl: "https://sepolia.infura.io/v3/b18fb7e6ca7045ac83c41157ab93f990",
+  chainId: 11155111, // Sepolia Testnet
+  rpcUrl: process.env.NEXT_PUBLIC_RPC_URL || "https://sepolia.infura.io/v3/YOUR_INFURA_API_KEY",
   
   // Wallet Connect Configuration
-  walletConnectProjectId: "2ec9743d0d0cd7fb94dee1a7e6d33475",
+  walletConnectProjectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || "YOUR_WALLET_CONNECT_PROJECT_ID",
   
-  // Infura Configuration
-  infuraApiKey: "b18fb7e6ca7045ac83c41157ab93f990",
+  // Alternative RPC Configuration
   alternativeRpcUrl: "https://1rpc.io/sepolia",
   
   // Contract Configuration
-  contractAddress: "", // Will be set after deployment
+  contractAddress: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "", // Set after deployment
 } as const;
