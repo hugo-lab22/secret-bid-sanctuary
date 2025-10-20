@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import { SepoliaConfig } from "@fhevm/solidity/config/ZamaConfig.sol";
-import { euint32, externalEuint32, euint8, ebool, FHE } from "@fhevm/solidity/lib/FHE.sol";
+import { euint32, externalEuint32, euint8, ebool, eaddress, FHE } from "@fhevm/solidity/lib/FHE.sol";
 
 contract SecretBidSanctuary is SepoliaConfig {
     using FHE for *;
@@ -66,18 +66,25 @@ contract SecretBidSanctuary is SepoliaConfig {
         string memory _name,
         string memory _description,
         string memory _imageHash,
-        uint256 _reservePrice,
-        uint256 _duration
+        externalEuint32 _encryptedReservePrice,
+        uint256 _duration,
+        bytes calldata _inputProof
     ) public returns (uint256) {
         require(bytes(_name).length > 0, "Property name cannot be empty");
         require(_duration > 0, "Duration must be positive");
-        require(_reservePrice > 0, "Reserve price must be positive");
         
         uint256 propertyId = propertyCounter++;
         
+        // Convert external encrypted reserve price to internal euint32
+        euint32 encryptedReservePrice = FHE.fromExternal(_encryptedReservePrice, _inputProof);
+        
+        // Set ACL permissions for the encrypted reserve price
+        FHE.allowThis(encryptedReservePrice);
+        FHE.allow(encryptedReservePrice, msg.sender);
+        
         properties[propertyId] = Property({
-            propertyId: FHE.asEuint32(0), // Will be set properly later
-            reservePrice: FHE.asEuint32(0), // Will be set to actual value via FHE operations
+            propertyId: FHE.asEuint32(uint32(propertyId)),
+            reservePrice: encryptedReservePrice,
             currentBid: FHE.asEuint32(0),
             bidCount: FHE.asEuint32(0),
             isActive: true,
@@ -110,18 +117,32 @@ contract SecretBidSanctuary is SepoliaConfig {
         // Convert externalEuint32 to euint32 using FHE.fromExternal
         euint32 internalAmount = FHE.fromExternal(amount, inputProof);
         
+        // Set ACL permissions for the encrypted bid amount
+        FHE.allowThis(internalAmount);
+        FHE.allow(internalAmount, msg.sender);
+        
+        // Check if bid is higher than current bid (encrypted comparison)
+        euint32 currentBid = properties[propertyId].currentBid;
+        ebool isHigherBid = FHE.gt(internalAmount, currentBid);
+        
+        // Update current bid if this is higher (encrypted conditional update)
+        euint32 newCurrentBid = FHE.select(isHigherBid, internalAmount, currentBid);
+        properties[propertyId].currentBid = newCurrentBid;
+        
+        // Update bid count
+        properties[propertyId].bidCount = FHE.add(properties[propertyId].bidCount, FHE.asEuint32(1));
+        
+        // Update highest bidder (simplified - always update for now)
+        // In a real implementation, this would need to be handled differently
+        properties[propertyId].highestBidder = msg.sender;
+        
         bids[bidId] = Bid({
-            bidId: FHE.asEuint32(0), // Will be set properly later
+            bidId: FHE.asEuint32(uint32(bidId)),
             amount: internalAmount,
             bidder: msg.sender,
             timestamp: block.timestamp,
             isRevealed: false
         });
-        
-        // Update property totals
-        properties[propertyId].currentBid = FHE.add(properties[propertyId].currentBid, internalAmount);
-        properties[propertyId].bidCount = FHE.add(properties[propertyId].bidCount, FHE.asEuint32(1));
-        properties[propertyId].highestBidder = msg.sender;
         
         emit BidPlaced(bidId, propertyId, msg.sender, 0); // Amount will be decrypted off-chain
         return bidId;
@@ -177,7 +198,7 @@ contract SecretBidSanctuary is SepoliaConfig {
         uint8 bidCount,
         bool isActive,
         bool isVerified,
-        address owner,
+        address propertyOwner,
         address highestBidder,
         uint256 startTime,
         uint256 endTime
@@ -233,8 +254,42 @@ contract SecretBidSanctuary is SepoliaConfig {
         return 0; // FHE.decrypt(bidderReputation[bidder]) - will be decrypted off-chain
     }
     
-    function getPropertyOwnerReputation(address owner) public view returns (uint8) {
-        return 0; // FHE.decrypt(propertyOwnerReputation[owner]) - will be decrypted off-chain
+    function getPropertyOwnerReputation(address propertyOwner) public view returns (uint8) {
+        return 0; // FHE.decrypt(propertyOwnerReputation[propertyOwner]) - will be decrypted off-chain
+    }
+    
+    // Get encrypted property data for decryption
+    function getPropertyEncryptedData(uint256 propertyId) public view returns (
+        bytes32 reservePrice,
+        bytes32 currentBid,
+        bytes32 bidCount
+    ) {
+        Property storage property = properties[propertyId];
+        return (
+            FHE.toBytes32(property.reservePrice),
+            FHE.toBytes32(property.currentBid),
+            FHE.toBytes32(property.bidCount)
+        );
+    }
+    
+    // Get encrypted bid data for decryption
+    function getBidEncryptedData(uint256 bidId) public view returns (
+        bytes32 amount
+    ) {
+        Bid storage bid = bids[bidId];
+        return (
+            FHE.toBytes32(bid.amount)
+        );
+    }
+    
+    // Get encrypted auction result data for decryption
+    function getAuctionResultEncryptedData(uint256 resultId) public view returns (
+        bytes32 winningBid
+    ) {
+        AuctionResult storage result = auctionResults[resultId];
+        return (
+            FHE.toBytes32(result.winningBid)
+        );
     }
     
     function settleAuction(uint256 propertyId, uint256 resultId) public {

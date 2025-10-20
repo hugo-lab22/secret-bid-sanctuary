@@ -7,6 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useZamaInstance } from "@/hooks/useZamaInstance";
+import { useEthersSigner } from "@/hooks/useEthersSigner";
+import { usePlaceBid } from "@/hooks/useContract";
 import { Lock, Wallet, Clock, DollarSign, Shield } from "lucide-react";
 
 interface BiddingModalProps {
@@ -17,13 +20,18 @@ interface BiddingModalProps {
 
 export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
   const [bidAmount, setBidAmount] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
   const { address, isConnected } = useAccount();
+  const { instance } = useZamaInstance();
+  const signerPromise = useEthersSigner();
   
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   });
+  
+  const { writeContract: placeBidContract } = usePlaceBid();
 
   if (!property) return null;
 
@@ -32,6 +40,15 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
       toast({
         title: "Wallet Not Connected",
         description: "Please connect your wallet to place a bid",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!instance || !address || !signerPromise) {
+      toast({
+        title: "Missing Encryption Service",
+        description: "FHE encryption service is not available",
         variant: "destructive",
       });
       return;
@@ -46,24 +63,50 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
       return;
     }
 
+    setSubmitting(true);
+    
     try {
-      // Note: In a real implementation, you would need to encrypt the bid amount using FHE
-      // For now, we'll simulate the contract call
-      const bidAmountWei = BigInt(parseFloat(bidAmount.replace(/[,$]/g, "")) * 1e18);
+      const CONTRACT_ADDRESS = '0xB979D2a4D8795BffB02e987D45AaC9F562c070Be';
+      const bidAmountValue = Math.floor(parseFloat(bidAmount.replace(/[,$]/g, "")) * 100); // Convert to cents for euint32
       
-      writeContract({
-        address: '0x0000000000000000000000000000000000000000', // Contract address will be set after deployment
-        abi: [], // Contract ABI will be added after deployment
-        functionName: 'placeBid',
-        args: [property.id, bidAmountWei],
-        value: bidAmountWei,
+      // Create encrypted input using FHE
+      const input = instance.createEncryptedInput(CONTRACT_ADDRESS, address);
+      input.add32(bidAmountValue);
+      
+      // Encrypt the bid amount
+      const encryptedInput = await input.encrypt();
+      
+      // Convert handles to proper format
+      const convertHex = (handle: any): string => {
+        if (typeof handle === 'string') {
+          return handle.startsWith('0x') ? handle : `0x${handle}`;
+        } else if (handle instanceof Uint8Array) {
+          return `0x${Array.from(handle).map(b => b.toString(16).padStart(2, '0')).join('')}`;
+        } else if (Array.isArray(handle)) {
+          return `0x${handle.map(b => b.toString(16).padStart(2, '0')).join('')}`;
+        }
+        return `0x${handle.toString()}`;
+      };
+      
+      const handles = encryptedInput.handles.map(convertHex);
+      const inputProof = `0x${Array.from(encryptedInput.inputProof)
+        .map(b => b.toString(16).padStart(2, '0')).join('')}`;
+      
+      // Call contract with encrypted data
+      placeBidContract({
+        args: [property.id, handles[0], inputProof],
+        value: BigInt(bidAmountValue * 1e16), // Convert to wei for payment
       });
+      
     } catch (err) {
+      console.error('FHE encryption failed:', err);
       toast({
-        title: "Transaction Failed",
-        description: "Failed to submit bid. Please try again.",
+        title: "Encryption Failed",
+        description: "Failed to encrypt bid amount. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -193,18 +236,18 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
             <Button 
               variant="bid" 
               onClick={handleSubmitBid}
-              disabled={isPending || isConfirming || !bidAmount || !isConnected}
+              disabled={isPending || isConfirming || submitting || !bidAmount || !isConnected || !instance}
               className="flex-1"
             >
-              {isPending || isConfirming ? (
+              {isPending || isConfirming || submitting ? (
                 <>
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2"></div>
-                  {isPending ? 'Confirming...' : 'Processing...'}
+                  {submitting ? 'Encrypting...' : isPending ? 'Confirming...' : 'Processing...'}
                 </>
               ) : (
                 <>
                   <Lock className="h-4 w-4 mr-2" />
-                  Submit Bid
+                  Submit Encrypted Bid
                 </>
               )}
             </Button>

@@ -1,0 +1,95 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {"internalType": "address", "name": "_verifier", "type": "address"}
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [
+        {"internalType": "string", "name": "_name", "type": "string"},
+        {"internalType": "string", "name": "_description", "type": "string"},
+        {"internalType": "string", "name": "_imageHash", "type": "string"},
+        {"internalType": "bytes32", "name": "_encryptedReservePrice", "type": "bytes32"},
+        {"internalType": "uint256", "name": "_duration", "type": "uint256"},
+        {"internalType": "bytes", "name": "_inputProof", "type": "bytes"}
+      ],
+      "name": "listProperty",
+      "outputs": [
+        {"internalType": "uint256", "name": "", "type": "uint256"}
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "uint256", "name": "propertyId", "type": "uint256"},
+        {"internalType": "bytes32", "name": "amount", "type": "bytes32"},
+        {"internalType": "bytes", "name": "inputProof", "type": "bytes"}
+      ],
+      "name": "placeBid",
+      "outputs": [
+        {"internalType": "uint256", "name": "", "type": "uint256"}
+      ],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "uint256", "name": "propertyId", "type": "uint256"}
+      ],
+      "name": "endAuction",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "uint256", "name": "propertyId", "type": "uint256"}
+      ],
+      "name": "getPropertyEncryptedData",
+      "outputs": [
+        {"internalType": "bytes32", "name": "reservePrice", "type": "bytes32"},
+        {"internalType": "bytes32", "name": "currentBid", "type": "bytes32"},
+        {"internalType": "bytes32", "name": "bidCount", "type": "bytes32"}
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "uint256", "name": "bidId", "type": "uint256"}
+      ],
+      "name": "getBidEncryptedData",
+      "outputs": [
+        {"internalType": "bytes32", "name": "amount", "type": "bytes32"}
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "uint256", "name": "propertyId", "type": "uint256"}
+      ],
+      "name": "getPropertyInfo",
+      "outputs": [
+        {"internalType": "string", "name": "name", "type": "string"},
+        {"internalType": "string", "name": "description", "type": "string"},
+        {"internalType": "string", "name": "imageHash", "type": "string"},
+        {"internalType": "uint8", "name": "reservePrice", "type": "uint8"},
+        {"internalType": "uint8", "name": "currentBid", "type": "uint8"},
+        {"internalType": "uint8", "name": "bidCount", "type": "uint8"},
+        {"internalType": "bool", "name": "isActive", "type": "bool"},
+        {"internalType": "bool", "name": "isVerified", "type": "bool"},
+        {"internalType": "address", "name": "owner", "type": "address"},
+        {"internalType": "address", "name": "highestBidder", "type": "address"},
+        {"internalType": "uint256", "name": "startTime", "type": "uint256"},
+        {"internalType": "uint256", "name": "endTime", "type": "uint256"}
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ]
+}

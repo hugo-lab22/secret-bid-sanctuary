@@ -1,10 +1,16 @@
 // Deployment script for Secret Bid Sanctuary contract
-// This script deploys the contract to Sepolia testnet
+// This script deploys the contract to Sepolia testnet with FHE support
 
 const { ethers } = require("hardhat");
 
 async function main() {
   console.log("Starting Secret Bid Sanctuary contract deployment...");
+
+  // Initialize FHE support
+  const { fhevm } = require("@fhevm/hardhat-plugin");
+  if (fhevm && fhevm.initializeCLIApi) {
+    await fhevm.initializeCLIApi();
+  }
 
   // Get the contract factory
   const SecretBidSanctuary = await ethers.getContractFactory("SecretBidSanctuary");
@@ -13,7 +19,7 @@ async function main() {
   // Note: You'll need to provide a verifier address
   const verifierAddress = "0x0000000000000000000000000000000000000000"; // Replace with actual verifier address
   
-  console.log("Deploying contract...");
+  console.log("Deploying contract with FHE support...");
   const secretBidSanctuary = await SecretBidSanctuary.deploy(verifierAddress);
   
   await secretBidSanctuary.waitForDeployment();
