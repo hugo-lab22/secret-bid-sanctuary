@@ -123,6 +123,12 @@ contract SecretBidSanctuary is SepoliaConfig {
         
         // Check if bid is higher than current bid (encrypted comparison)
         euint32 currentBid = properties[propertyId].currentBid;
+        
+        // Set permissions for currentBid before comparison
+        FHE.allowThis(currentBid);
+        FHE.allow(currentBid, msg.sender);
+        
+        // Compare encrypted values
         ebool isHigherBid = FHE.gt(internalAmount, currentBid);
         
         // Update current bid if this is higher (encrypted conditional update)
