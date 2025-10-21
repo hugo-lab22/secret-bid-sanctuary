@@ -132,7 +132,7 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
         proofLength: inputProof.length
       });
       
-      writeContract({
+      await writeContract({
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: contractABI.abi as any,
         functionName: 'placeBid',
@@ -154,23 +154,27 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
   };
 
   // Handle transaction success
-  if (isSuccess) {
-    toast({
-      title: "Bid Submitted Successfully",
-      description: "Your encrypted bid has been submitted to the blockchain",
-    });
-    setBidAmount("");
-    onClose();
-  }
+  useEffect(() => {
+    if (isSuccess) {
+      toast({
+        title: "Bid Submitted Successfully",
+        description: "Your encrypted bid has been submitted to the blockchain",
+      });
+      setBidAmount("");
+      onClose();
+    }
+  }, [isSuccess, toast, onClose]);
 
   // Handle transaction error
-  if (error) {
-    toast({
-      title: "Transaction Failed",
-      description: error.message,
-      variant: "destructive",
-    });
-  }
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Transaction Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
 
   const formatCurrency = (value: string) => {
     const numericValue = value.replace(/[^0-9]/g, "");
