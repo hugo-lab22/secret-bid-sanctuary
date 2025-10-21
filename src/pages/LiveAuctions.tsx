@@ -55,22 +55,35 @@ const LiveAuctions = () => {
             abi: contractABI.abi as any,
             functionName: 'getPropertyInfo',
             args: [BigInt(i)],
+            authorizationList: [],
           });
           console.log('[DATA] [Live] getPropertyInfo(', i, ')=', info);
-          const [name, description, imageHash] = info as any;
+          const [name, description, imageHash, reservePrice, currentBid, bidCount, isActive, isVerified, propertyOwner, highestBidder, startTime, endTime] = info as any;
+          
+          // Get encrypted data for decryption
+          const encryptedData = await publicClient!.readContract({
+            address: contractAddress,
+            abi: contractABI.abi as any,
+            functionName: 'getPropertyEncryptedData',
+            args: [BigInt(i)],
+            authorizationList: [],
+          });
+          console.log('[DATA] [Live] getPropertyEncryptedData(', i, ')=', encryptedData);
+          
           const mapped = {
             id: String(i),
             title: name || `Property #${i}`,
             location: description || 'Encrypted Location',
-            price: '$—',
+            price: '$—', // Will be decrypted off-chain
             image: mapImagePath(imageHash, i),
-            auctionEndTime: new Date(Date.now() + (i + 1) * 24 * 60 * 60 * 1000),
-            currentBids: 0,
-            isActive: true,
-            lastBidAmount: '$—',
+            auctionEndTime: new Date(Number(endTime) * 1000), // Convert from seconds to milliseconds
+            currentBids: Number(bidCount) || 0,
+            isActive: isActive,
+            lastBidAmount: '$—', // Will be decrypted off-chain
             minimumBid: '$100,000', // Set a reasonable minimum bid
+            encryptedData: encryptedData, // Store encrypted data for potential decryption
           };
-          console.log('[DATA] [Live] mapped property', i, 'isActive:', mapped.isActive);
+          console.log('[DATA] [Live] mapped property', i, 'isActive:', mapped.isActive, 'bidCount:', mapped.currentBids);
           arr.push(mapped);
         } catch (e) {
           console.warn('[DATA] [Live] getPropertyInfo error', i, e);
@@ -85,6 +98,7 @@ const LiveAuctions = () => {
             isActive: true,
             lastBidAmount: '$—',
             minimumBid: '$100,000', // Set a reasonable minimum bid
+            encryptedData: null,
           };
           console.log('[DATA] [Live] fallback property', i, 'isActive:', fallbackProperty.isActive);
           arr.push(fallbackProperty);
@@ -144,7 +158,10 @@ const LiveAuctions = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {console.log('[DATA] [Live] Rendering liveAuctions:', liveAuctions.length, 'items')}
+            {(() => {
+              console.log('[DATA] [Live] Rendering liveAuctions:', liveAuctions.length, 'items');
+              return null;
+            })()}
             {liveAuctions.map((auction) => {
               const handleBidClick = () => {
                 console.log('[BID] onPlaceBid callback called!', auction);
