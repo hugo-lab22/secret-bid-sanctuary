@@ -12,8 +12,9 @@ async function main() {
     await fhevm.initializeCLIApi();
   }
 
-  // Get the contract factory
+  // Get the contract factory and deployer
   const SecretBidSanctuary = await ethers.getContractFactory("SecretBidSanctuary");
+  const [deployer] = await ethers.getSigners();
   
   // Deploy the contract
   // Note: You'll need to provide a verifier address
@@ -30,7 +31,7 @@ async function main() {
   console.log("📋 Contract details:");
   console.log("   - Network: Sepolia Testnet");
   console.log("   - Verifier: ", verifierAddress);
-  console.log("   - Owner: ", await secretBidSanctuary.owner());
+  console.log("   - Deployer: ", deployer.address);
   
   // Save deployment info
   const deploymentInfo = {

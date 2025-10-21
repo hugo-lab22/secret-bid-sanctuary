@@ -66,6 +66,7 @@ const LiveAuctions = () => {
             abi: contractABI.abi as any,
             functionName: 'getPropertyEncryptedData',
             args: [BigInt(i)],
+            authorizationList: [],
           });
           console.log('[DATA] [Live] getPropertyEncryptedData(', i, ')=', encryptedData);
           

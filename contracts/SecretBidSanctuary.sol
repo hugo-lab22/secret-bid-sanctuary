@@ -9,9 +9,9 @@ contract SecretBidSanctuary is SepoliaConfig {
     
     struct Property {
         euint32 propertyId;
-        euint32 reservePrice;
-        euint32 currentBid;
-        euint32 bidCount;
+        uint32 reservePrice;  // Public information, no encryption needed
+        euint32 currentBid;   // Only current highest bid needs encryption
+        uint32 bidCount;      // Public information, no encryption needed
         bool isActive;
         bool isVerified;
         string name;
@@ -66,27 +66,20 @@ contract SecretBidSanctuary is SepoliaConfig {
         string memory _name,
         string memory _description,
         string memory _imageHash,
-        externalEuint32 _encryptedReservePrice,
-        uint256 _duration,
-        bytes calldata _inputProof
+        uint32 _reservePrice,
+        uint256 _duration
     ) public returns (uint256) {
         require(bytes(_name).length > 0, "Property name cannot be empty");
         require(_duration > 0, "Duration must be positive");
+        require(_reservePrice > 0, "Reserve price must be positive");
         
         uint256 propertyId = propertyCounter++;
         
-        // Convert external encrypted reserve price to internal euint32
-        euint32 encryptedReservePrice = FHE.fromExternal(_encryptedReservePrice, _inputProof);
-        
-        // Set ACL permissions for the encrypted reserve price
-        FHE.allowThis(encryptedReservePrice);
-        FHE.allow(encryptedReservePrice, msg.sender);
-        
         properties[propertyId] = Property({
             propertyId: FHE.asEuint32(uint32(propertyId)),
-            reservePrice: encryptedReservePrice,
+            reservePrice: _reservePrice,
             currentBid: FHE.asEuint32(0),
-            bidCount: FHE.asEuint32(0),
+            bidCount: 0,
             isActive: true,
             isVerified: false,
             name: _name,
@@ -134,11 +127,8 @@ contract SecretBidSanctuary is SepoliaConfig {
         // TODO: Implement proper encrypted comparison when ACL is resolved
         properties[propertyId].currentBid = internalAmount;
         
-        // Update bid count - set permissions for bidCount before operation
-        euint32 currentBidCount = properties[propertyId].bidCount;
-        FHE.allowThis(currentBidCount);
-        FHE.allow(currentBidCount, msg.sender);
-        properties[propertyId].bidCount = FHE.add(currentBidCount, FHE.asEuint32(1));
+        // Update bid count - now a simple uint32 increment
+        properties[propertyId].bidCount++;
         
         // Update highest bidder (simplified - always update for now)
         // In a real implementation, this would need to be handled differently
@@ -193,9 +183,9 @@ contract SecretBidSanctuary is SepoliaConfig {
         string memory name,
         string memory description,
         string memory imageHash,
-        uint8 reservePrice,
-        uint8 currentBid,
-        uint8 bidCount,
+        uint32 reservePrice,
+        uint32 currentBid,
+        uint32 bidCount,
         bool isActive,
         bool isVerified,
         address propertyOwner,
@@ -208,9 +198,9 @@ contract SecretBidSanctuary is SepoliaConfig {
             property.name,
             property.description,
             property.imageHash,
-            0, // FHE.decrypt(property.reservePrice) - will be decrypted off-chain
+            property.reservePrice, // Now public, no decryption needed
             0, // FHE.decrypt(property.currentBid) - will be decrypted off-chain
-            0, // FHE.decrypt(property.bidCount) - will be decrypted off-chain
+            property.bidCount, // Now public, no decryption needed
             property.isActive,
             property.isVerified,
             property.owner,
@@ -260,15 +250,11 @@ contract SecretBidSanctuary is SepoliaConfig {
     
     // Get encrypted property data for decryption
     function getPropertyEncryptedData(uint256 propertyId) public view returns (
-        bytes32 reservePrice,
-        bytes32 currentBid,
-        bytes32 bidCount
+        bytes32 currentBid
     ) {
         Property storage property = properties[propertyId];
         return (
-            FHE.toBytes32(property.reservePrice),
-            FHE.toBytes32(property.currentBid),
-            FHE.toBytes32(property.bidCount)
+            FHE.toBytes32(property.currentBid)
         );
     }
     
