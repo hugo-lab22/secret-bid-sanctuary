@@ -10,6 +10,11 @@ import { config } from "../../config";
 
 const LiveAuctions = () => {
   console.log('[LIVE] LiveAuctions component rendered');
+  console.log('[LIVE] Config debug:', {
+    contractAddress: config.contractAddress,
+    rpcUrl: config.rpcUrl,
+    chainId: config.chainId
+  });
   
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
   const [isBiddingModalOpen, setIsBiddingModalOpen] = useState(false);
@@ -23,6 +28,12 @@ const LiveAuctions = () => {
     functionName: "propertyCounter",
   });
   const publicClient = usePublicClient();
+  
+  console.log('[LIVE] Wagmi client debug:', {
+    publicClient: !!publicClient,
+    contractAddress,
+    total
+  });
 
   useEffect(() => {
     console.log('[DATA] [Live] useEffect triggered, total:', total);
@@ -50,6 +61,10 @@ const LiveAuctions = () => {
         };
 
         try {
+          console.log('[DATA] [Live] Attempting to read property info for property', i);
+          console.log('[DATA] [Live] Using RPC URL:', config.rpcUrl);
+          console.log('[DATA] [Live] Using contract address:', contractAddress);
+          
           const info = await publicClient!.readContract({
             address: contractAddress,
             abi: contractABI.abi as any,
@@ -61,6 +76,7 @@ const LiveAuctions = () => {
           const [name, description, imageHash, reservePrice, currentBid, bidCount, isActive, isVerified, propertyOwner, highestBidder, startTime, endTime] = info as any;
           
           // Get encrypted data for decryption
+          console.log('[DATA] [Live] Attempting to read encrypted data for property', i);
           const encryptedData = await publicClient!.readContract({
             address: contractAddress,
             abi: contractABI.abi as any,

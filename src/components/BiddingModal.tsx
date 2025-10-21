@@ -44,6 +44,18 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
     }
   }, [error, toast]);
 
+  // Handle transaction success
+  useEffect(() => {
+    if (isSuccess) {
+      toast({
+        title: "Bid Submitted Successfully",
+        description: "Your encrypted bid has been submitted to the blockchain",
+      });
+      setBidAmount("");
+      onClose();
+    }
+  }, [isSuccess, toast, onClose]);
+
   // Early return after all hooks are called
   if (!property) {
     console.log('[BID] No property provided to modal');
@@ -153,19 +165,6 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
       setSubmitting(false);
     }
   };
-
-  // Handle transaction success
-  useEffect(() => {
-    if (isSuccess) {
-      toast({
-        title: "Bid Submitted Successfully",
-        description: "Your encrypted bid has been submitted to the blockchain",
-      });
-      setBidAmount("");
-      onClose();
-    }
-  }, [isSuccess, toast, onClose]);
-
 
   const formatCurrency = (value: string) => {
     const numericValue = value.replace(/[^0-9]/g, "");
