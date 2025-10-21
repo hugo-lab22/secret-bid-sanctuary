@@ -83,7 +83,7 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
       // Create encrypted input using FHE
       const input = instance.createEncryptedInput(CONTRACT_ADDRESS, address);
       // Add the bid amount to the encrypted input
-      input.add32();
+      input.add32(bidAmountValue);
       
       // Encrypt the bid amount
       const encryptedInput = await input.encrypt();
