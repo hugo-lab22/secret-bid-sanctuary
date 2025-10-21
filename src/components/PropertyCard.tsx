@@ -13,6 +13,7 @@ interface PropertyCardProps {
   auctionEndTime: Date;
   currentBids: number;
   isActive: boolean;
+  onPlaceBid?: () => void;
 }
 
 export function PropertyCard({
@@ -23,6 +24,7 @@ export function PropertyCard({
   auctionEndTime,
   currentBids,
   isActive,
+  onPlaceBid,
 }: PropertyCardProps) {
   const [timeLeft, setTimeLeft] = useState("");
 
@@ -116,8 +118,24 @@ export function PropertyCard({
           size="default" 
           className="w-full"
           disabled={!isActive}
+          onClick={(e) => {
+            console.log('[BID] PropertyCard button clicked!', { 
+              isActive, 
+              onPlaceBid: !!onPlaceBid,
+              onPlaceBidType: typeof onPlaceBid,
+              onPlaceBidValue: onPlaceBid
+            });
+            e.preventDefault();
+            e.stopPropagation();
+            if (onPlaceBid && typeof onPlaceBid === 'function') {
+              console.log('[BID] Calling onPlaceBid function');
+              onPlaceBid();
+            } else {
+              console.log('[BID] onPlaceBid is not a function or is undefined');
+            }
+          }}
         >
-          {isActive ? "Place Encrypted Bid" : "Auction Not Started"}
+              {isActive ? "Place Free Encrypted Bid" : "Auction Not Started"}
         </Button>
       </CardFooter>
     </Card>

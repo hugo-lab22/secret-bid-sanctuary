@@ -22,17 +22,8 @@ export function Header() {
             </div>
           </div>
 
-          {/* Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
-            <a href="/properties" className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-trust-blue transition-smooth">
-              <Home className="h-4 w-4" />
-              <span>Properties</span>
-            </a>
-            <a href="/live-auctions" className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-trust-blue transition-smooth">
-              <Gavel className="h-4 w-4" />
-              <span>Live Auctions</span>
-            </a>
-          </nav>
+          {/* Navigation (simplified) */}
+          <nav className="hidden md:flex items-center space-x-6" />
 
           {/* Wallet Connection */}
           <div className="flex items-center space-x-3">

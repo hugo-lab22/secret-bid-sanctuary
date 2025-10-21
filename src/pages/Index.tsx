@@ -1,104 +1,164 @@
 import { Header } from "@/components/Header";
-import { HeroSection } from "@/components/HeroSection";
-import { AuctionStats } from "@/components/AuctionStats";
-import { PropertyCard } from "@/components/PropertyCard";
-import property1 from "@/assets/property-1.jpg";
-import property2 from "@/assets/property-2.jpg";
-import property3 from "@/assets/property-3.jpg";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Shield, Lock, Eye, ArrowRight, Users, Clock, TrendingUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
-  // Mock property data
-  const properties = [
-    {
-      id: "1",
-      title: "Modern Luxury Villa",
-      location: "Beverly Hills, CA",
-      price: "$2,850,000",
-      image: property1,
-      auctionEndTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-      currentBids: 7,
-      isActive: true,
-    },
-    {
-      id: "2", 
-      title: "Downtown Penthouse",
-      location: "Manhattan, NY",
-      price: "$4,200,000",
-      image: property2,
-      auctionEndTime: new Date(Date.now() + 5 * 60 * 60 * 1000), // 5 hours from now
-      currentBids: 12,
-      isActive: true,
-    },
-    {
-      id: "3",
-      title: "Waterfront Estate",
-      location: "Malibu, CA", 
-      price: "$6,750,000",
-      image: property3,
-      auctionEndTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-      currentBids: 3,
-      isActive: false,
-    },
-  ];
+  const navigate = useNavigate();
+
+  const handleEnterAuctions = () => {
+    navigate('/live-auctions');
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <HeroSection />
-      <AuctionStats />
       
-      {/* Properties Section */}
-      <section className="py-16">
+      {/* Hero Section */}
+      <section className="bg-gradient-auction py-20">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-luxury-navy mb-4">
-              Featured Properties
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Discover exceptional properties with encrypted bidding for ultimate privacy and fairness
+          <div className="text-center mb-16">
+            <Badge variant="outline" className="mb-6 text-luxury-gold border-luxury-gold">
+              <Shield className="h-4 w-4 mr-2" />
+              Fully Homomorphic Encryption
+            </Badge>
+            <h1 className="text-5xl lg:text-7xl font-bold text-white mb-6">
+              Secret Bid Sanctuary
+            </h1>
+            <p className="text-xl lg:text-2xl text-white/90 max-w-4xl mx-auto mb-8">
+              The world's first fully encrypted real estate auction platform. 
+              Your bids remain completely private until auction close.
             </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {properties.map((property) => (
-              <PropertyCard key={property.id} {...property} />
-            ))}
+            <Button 
+              size="lg" 
+              className="bg-white hover:bg-white/90 text-luxury-navy font-semibold px-8 py-4 text-lg"
+              onClick={handleEnterAuctions}
+            >
+              Enter Live Auctions
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-luxury-navy text-white py-12">
+      {/* Features Section */}
+      <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl lg:text-5xl font-bold text-luxury-navy mb-6">
+              Revolutionary Privacy Technology
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Experience the future of secure bidding with Fully Homomorphic Encryption
+            </p>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <h3 className="text-xl font-bold mb-4">Fair Housing Auctions</h3>
-              <p className="text-white/80">
-                Revolutionizing real estate with fully encrypted bidding powered by FHE technology.
+            <div className="text-center p-8 rounded-lg bg-gradient-card shadow-card">
+              <div className="bg-luxury-navy/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
+                <Lock className="h-8 w-8 text-luxury-navy" />
+              </div>
+              <h3 className="text-2xl font-bold text-luxury-navy mb-4">Complete Privacy</h3>
+              <p className="text-muted-foreground">
+                Your bids are encrypted and remain completely private. No one can see your bid amount until the auction closes.
               </p>
             </div>
-            <div>
-              <h4 className="font-semibold mb-4">Features</h4>
-              <ul className="space-y-2 text-white/80">
-                <li>Encrypted Bidding</li>
-                <li>Transparent Results</li>
-                <li>Real-time Auctions</li>
-                <li>Secure Payments</li>
-              </ul>
+            
+            <div className="text-center p-8 rounded-lg bg-gradient-card shadow-card">
+              <div className="bg-luxury-navy/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
+                <Shield className="h-8 w-8 text-luxury-navy" />
+              </div>
+              <h3 className="text-2xl font-bold text-luxury-navy mb-4">FHE Technology</h3>
+              <p className="text-muted-foreground">
+                Powered by Zama's Fully Homomorphic Encryption, enabling computations on encrypted data without decryption.
+              </p>
             </div>
-            <div>
-              <h4 className="font-semibold mb-4">Technology</h4>
-              <ul className="space-y-2 text-white/80">
-                <li>Fully Homomorphic Encryption</li>
-                <li>Blockchain Security</li>
-                <li>Smart Contracts</li>
-                <li>Wallet Integration</li>
-              </ul>
+            
+            <div className="text-center p-8 rounded-lg bg-gradient-card shadow-card">
+              <div className="bg-luxury-navy/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
+                <Eye className="h-8 w-8 text-luxury-navy" />
+              </div>
+              <h3 className="text-2xl font-bold text-luxury-navy mb-4">Transparent Results</h3>
+              <p className="text-muted-foreground">
+                Fair and transparent auction results with verifiable encryption and blockchain technology.
+              </p>
             </div>
           </div>
-          <div className="border-t border-white/20 mt-8 pt-8 text-center text-white/60">
-            <p>&copy; 2024 Fair Housing Auctions. All rights reserved.</p>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-20 bg-gradient-auction">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
+              Trusted by Premium Bidders
+            </h2>
+            <p className="text-xl text-white/90 max-w-3xl mx-auto">
+              Join the exclusive community of privacy-conscious real estate investors
+            </p>
           </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="text-center">
+              <div className="bg-white/20 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+                <Users className="h-10 w-10 text-white" />
+              </div>
+              <h3 className="text-3xl font-bold text-white mb-2">500+</h3>
+              <p className="text-white/80">Verified Bidders</p>
+            </div>
+            
+            <div className="text-center">
+              <div className="bg-white/20 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+                <TrendingUp className="h-10 w-10 text-white" />
+              </div>
+              <h3 className="text-3xl font-bold text-white mb-2">$50M+</h3>
+              <p className="text-white/80">Total Volume</p>
+            </div>
+            
+            <div className="text-center">
+              <div className="bg-white/20 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+                <Clock className="h-10 w-10 text-white" />
+              </div>
+              <h3 className="text-3xl font-bold text-white mb-2">24/7</h3>
+              <p className="text-white/80">Secure Operations</p>
+            </div>
+            
+            <div className="text-center">
+              <div className="bg-white/20 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+                <Shield className="h-10 w-10 text-white" />
+              </div>
+              <h3 className="text-3xl font-bold text-white mb-2">100%</h3>
+              <p className="text-white/80">Encrypted Bids</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-4xl lg:text-5xl font-bold text-luxury-navy mb-6">
+            Ready to Bid Privately?
+          </h2>
+          <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+            Join the future of private real estate auctions. Your bids, your privacy, your advantage.
+          </p>
+          <Button 
+            size="lg" 
+            className="bg-luxury-navy hover:bg-luxury-navy/90 text-white font-semibold px-8 py-4 text-lg"
+            onClick={handleEnterAuctions}
+          >
+            Start Bidding Now
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
+        </div>
+      </section>
+
+      <footer className="bg-luxury-navy text-white py-8">
+        <div className="container mx-auto px-4 text-center">
+          <p>&copy; 2024 Secret Bid Sanctuary. All rights reserved.</p>
         </div>
       </footer>
     </div>

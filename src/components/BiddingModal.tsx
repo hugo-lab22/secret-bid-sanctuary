@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { useZamaInstance } from "@/hooks/useZamaInstance";
 import { useEthersSigner } from "@/hooks/useEthersSigner";
-import { usePlaceBid } from "@/hooks/useContract";
+import contractABI from "@/lib/contractABI.json";
 import { Lock, Wallet, Clock, DollarSign, Shield } from "lucide-react";
 
 interface BiddingModalProps {
@@ -30,10 +30,13 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   });
-  
-  const { writeContract: placeBidContract } = usePlaceBid();
 
-  if (!property) return null;
+  if (!property) {
+    console.log('[BID] No property provided to modal');
+    return null;
+  }
+  
+  console.log('[BID] Modal rendering with property:', property);
 
   const handleSubmitBid = async () => {
     if (!isConnected) {
@@ -54,7 +57,10 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
       return;
     }
 
-    if (!bidAmount || parseFloat(bidAmount.replace(/[,$]/g, "")) < parseFloat(property.minimumBid.replace(/[,$]/g, ""))) {
+    const bidAmountNum = parseFloat(bidAmount.replace(/[,$]/g, ""));
+    const minBidNum = parseFloat(property.minimumBid.replace(/[,$]/g, ""));
+    
+    if (!bidAmount || bidAmountNum < minBidNum) {
       toast({
         title: "Invalid Bid Amount",
         description: `Minimum bid is ${property.minimumBid}`,
@@ -66,15 +72,22 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
     setSubmitting(true);
     
     try {
-      const CONTRACT_ADDRESS = '0xB979D2a4D8795BffB02e987D45AaC9F562c070Be';
+      const CONTRACT_ADDRESS = '0x23eeB367c862112E19D1b9B8Bc44192b6e984EcF'; // Updated contract address
       const bidAmountValue = Math.floor(parseFloat(bidAmount.replace(/[,$]/g, "")) * 100); // Convert to cents for euint32
+      
+      console.log('[BID] Starting FHE encryption for amount:', bidAmountValue);
+      console.log('[BID] Property data:', property);
+      console.log('[BID] Instance available:', !!instance);
+      console.log('[BID] Address:', address);
       
       // Create encrypted input using FHE
       const input = instance.createEncryptedInput(CONTRACT_ADDRESS, address);
-      input.add32(bidAmountValue);
+      // Add the bid amount to the encrypted input
+      input.add32();
       
       // Encrypt the bid amount
       const encryptedInput = await input.encrypt();
+      console.log('[BID] FHE encryption completed, handles:', encryptedInput.handles);
       
       // Convert handles to proper format
       const convertHex = (handle: any): string => {
@@ -89,13 +102,24 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
       };
       
       const handles = encryptedInput.handles.map(convertHex);
-      const inputProof = `0x${Array.from(encryptedInput.inputProof)
-        .map(b => b.toString(16).padStart(2, '0')).join('')}`;
+      const inputProof = `0x${Array.from(encryptedInput.inputProof as any)
+        .map((b: any) => b.toString(16).padStart(2, '0')).join('')}`;
       
-      // Call contract with encrypted data
-      placeBidContract({
-        args: [property.id, handles[0], inputProof],
-        value: BigInt(bidAmountValue * 1e16), // Convert to wei for payment
+      console.log('[BID] Calling contract with:', {
+        propertyId: property.id,
+        handle: handles[0],
+        proof: inputProof.substring(0, 20) + '...',
+        bidAmount: bidAmountValue
+      });
+      
+      // Call contract with encrypted data (no payment required)
+      writeContract({
+        address: CONTRACT_ADDRESS as `0x${string}`,
+        abi: contractABI.abi as any,
+        functionName: 'placeBid',
+        args: [BigInt(property.id), handles[0], inputProof],
+        chain: undefined,
+        account: address,
       });
       
     } catch (err) {
@@ -141,6 +165,8 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
     setBidAmount(formatCurrency(value));
   };
 
+  console.log('[BID] Modal isOpen:', isOpen);
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
@@ -193,7 +219,7 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Minimum bid: <span className="font-semibold">{property.minimumBid}</span>
+              Minimum bid: <span className="font-semibold">{property.minimumBid}</span> (No payment required)
             </p>
           </div>
 
@@ -239,17 +265,17 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
               disabled={isPending || isConfirming || submitting || !bidAmount || !isConnected || !instance}
               className="flex-1"
             >
-              {isPending || isConfirming || submitting ? (
-                <>
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2"></div>
-                  {submitting ? 'Encrypting...' : isPending ? 'Confirming...' : 'Processing...'}
-                </>
-              ) : (
-                <>
-                  <Lock className="h-4 w-4 mr-2" />
-                  Submit Encrypted Bid
-                </>
-              )}
+        {isPending || isConfirming || submitting ? (
+          <>
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2"></div>
+            {submitting ? 'Encrypting...' : isPending ? 'Confirming...' : 'Processing...'}
+          </>
+        ) : (
+          <>
+            <Lock className="h-4 w-4 mr-2" />
+            Submit Free Encrypted Bid
+          </>
+        )}
             </Button>
           </div>
         </div>

@@ -106,7 +106,7 @@ contract SecretBidSanctuary is SepoliaConfig {
         uint256 propertyId,
         externalEuint32 amount,
         bytes calldata inputProof
-    ) public payable returns (uint256) {
+    ) public returns (uint256) {
         require(properties[propertyId].owner != address(0), "Property does not exist");
         require(properties[propertyId].isActive, "Property auction is not active");
         require(block.timestamp <= properties[propertyId].endTime, "Auction has ended");

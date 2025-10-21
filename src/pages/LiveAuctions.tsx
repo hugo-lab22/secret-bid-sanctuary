@@ -1,61 +1,108 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/Header";
 import { PropertyCard } from "@/components/PropertyCard";
 import { BiddingModal } from "@/components/BiddingModal";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Clock, Users, Gavel } from "lucide-react";
-import property1 from "@/assets/property-1.jpg";
-import property2 from "@/assets/property-2.jpg";
-import property3 from "@/assets/property-3.jpg";
+import { Clock, Users } from "lucide-react";
+import { useReadContract, usePublicClient } from "wagmi";
+import contractABI from "@/lib/contractABI.json";
+import { config } from "../../config";
 
 const LiveAuctions = () => {
+  console.log('[LIVE] LiveAuctions component rendered');
+  
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
   const [isBiddingModalOpen, setIsBiddingModalOpen] = useState(false);
 
-  // Only active auction properties
-  const liveAuctions = [
-    {
-      id: "1",
-      title: "Modern Luxury Villa",
-      location: "Beverly Hills, CA",
-      price: "$2,850,000",
-      image: property1,
-      auctionEndTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-      currentBids: 7,
-      isActive: true,
-      lastBidAmount: "$2,850,000",
-      minimumBid: "$2,900,000",
-    },
-    {
-      id: "2", 
-      title: "Downtown Penthouse",
-      location: "Manhattan, NY",
-      price: "$4,200,000",
-      image: property2,
-      auctionEndTime: new Date(Date.now() + 5 * 60 * 60 * 1000),
-      currentBids: 12,
-      isActive: true,
-      lastBidAmount: "$4,200,000",
-      minimumBid: "$4,300,000",
-    },
-    {
-      id: "4",
-      title: "Mountain Retreat",
-      location: "Aspen, CO",
-      price: "$3,950,000",
-      image: property3,
-      auctionEndTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-      currentBids: 5,
-      isActive: true,
-      lastBidAmount: "$3,950,000",
-      minimumBid: "$4,050,000",
-    },
-  ];
+  const [liveAuctions, setLiveAuctions] = useState<any[]>([]);
+
+  const contractAddress = useMemo(() => config.contractAddress as `0x${string}`, []);
+  const { data: total } = useReadContract({
+    address: contractAddress,
+    abi: contractABI.abi,
+    functionName: "propertyCounter",
+  });
+  const publicClient = usePublicClient();
+
+  useEffect(() => {
+    console.log('[DATA] [Live] useEffect triggered, total:', total);
+    const load = async () => {
+      if (!total || typeof total !== "bigint") {
+        console.log('[DATA] [Live] No total or not bigint, returning');
+        return;
+      }
+      const count = Number(total);
+      console.log('[DATA] [Live] propertyCounter =', count);
+      const arr: any[] = [];
+      for (let i = 0; i < count; i++) {
+        const mapImagePath = (img: string | undefined, index: number) => {
+          if (!img) return `src/assets/property-${(index%3)+1}.jpg`;
+          if (img.startsWith('ipfs://')) {
+            const key = img.replace('ipfs://','');
+            const dict: Record<string,string> = {
+              villa: 'src/assets/property-1.jpg',
+              pent: 'src/assets/property-2.jpg',
+              water: 'src/assets/property-3.jpg',
+            };
+            return dict[key] || `src/assets/property-${(index%3)+1}.jpg`;
+          }
+          return img;
+        };
+
+        try {
+          const info = await publicClient!.readContract({
+            address: contractAddress,
+            abi: contractABI.abi as any,
+            functionName: 'getPropertyInfo',
+            args: [BigInt(i)],
+          });
+          console.log('[DATA] [Live] getPropertyInfo(', i, ')=', info);
+          const [name, description, imageHash] = info as any;
+          const mapped = {
+            id: String(i),
+            title: name || `Property #${i}`,
+            location: description || 'Encrypted Location',
+            price: '$—',
+            image: mapImagePath(imageHash, i),
+            auctionEndTime: new Date(Date.now() + (i + 1) * 24 * 60 * 60 * 1000),
+            currentBids: 0,
+            isActive: true,
+            lastBidAmount: '$—',
+            minimumBid: '$100,000', // Set a reasonable minimum bid
+          };
+          console.log('[DATA] [Live] mapped property', i, 'isActive:', mapped.isActive);
+          arr.push(mapped);
+        } catch (e) {
+          console.warn('[DATA] [Live] getPropertyInfo error', i, e);
+          const fallbackProperty = {
+            id: String(i),
+            title: `Property #${i}`,
+            location: 'Encrypted Location',
+            price: '$—',
+            image: `src/assets/property-${(i % 3) + 1}.jpg`,
+            auctionEndTime: new Date(Date.now() + (i + 1) * 24 * 60 * 60 * 1000),
+            currentBids: 0,
+            isActive: true,
+            lastBidAmount: '$—',
+            minimumBid: '$100,000', // Set a reasonable minimum bid
+          };
+          console.log('[DATA] [Live] fallback property', i, 'isActive:', fallbackProperty.isActive);
+          arr.push(fallbackProperty);
+        }
+      }
+      setLiveAuctions(arr);
+      console.log('[DATA] [Live] items loaded:', arr.length);
+      console.log('[DATA] [Live] liveAuctions state updated');
+    };
+    load();
+  }, [total]);
 
   const handlePlaceBid = (property: any) => {
+    console.log('[BID] Opening modal for property:', property);
+    console.log('[BID] Current modal state:', isBiddingModalOpen);
     setSelectedProperty(property);
     setIsBiddingModalOpen(true);
+    console.log('[BID] Modal should be open now');
   };
 
   return (
@@ -74,34 +121,7 @@ const LiveAuctions = () => {
             </p>
           </div>
 
-          {/* Live Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Gavel className="h-6 w-6 text-white mr-2" />
-                <span className="text-2xl font-bold text-white">
-                  {liveAuctions.length}
-                </span>
-              </div>
-              <p className="text-white/80">Active Auctions</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Users className="h-6 w-6 text-white mr-2" />
-                <span className="text-2xl font-bold text-white">
-                  {liveAuctions.reduce((sum, auction) => sum + auction.currentBids, 0)}
-                </span>
-              </div>
-              <p className="text-white/80">Total Bids</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Clock className="h-6 w-6 text-white mr-2" />
-                <span className="text-2xl font-bold text-white">Live</span>
-              </div>
-              <p className="text-white/80">Bidding Status</p>
-            </div>
-          </div>
+          {/* Simplified: remove live stats */}
         </div>
       </section>
 
@@ -124,21 +144,30 @@ const LiveAuctions = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {liveAuctions.map((auction) => (
-              <div key={auction.id} className="relative">
-                <PropertyCard {...auction} />
-                <div className="absolute bottom-4 left-4 right-4">
-                  <Button
-                    variant="bid"
-                    className="w-full"
-                    onClick={() => handlePlaceBid(auction)}
-                  >
-                    <Gavel className="h-4 w-4 mr-2" />
-                    Place Encrypted Bid
-                  </Button>
-                </div>
-              </div>
-            ))}
+            {console.log('[DATA] [Live] Rendering liveAuctions:', liveAuctions.length, 'items')}
+            {liveAuctions.map((auction) => {
+              const handleBidClick = () => {
+                console.log('[BID] onPlaceBid callback called!', auction);
+                handlePlaceBid(auction);
+              };
+              
+              console.log('[BID] Rendering PropertyCard for', auction.id, 'with onPlaceBid:', !!handleBidClick, 'type:', typeof handleBidClick);
+              
+              return (
+                <PropertyCard 
+                  key={auction.id} 
+                  id={auction.id}
+                  title={auction.title}
+                  location={auction.location}
+                  price={auction.price}
+                  image={auction.image}
+                  auctionEndTime={auction.auctionEndTime}
+                  currentBids={auction.currentBids}
+                  isActive={auction.isActive}
+                  onPlaceBid={handleBidClick}
+                />
+              );
+            })}
           </div>
 
           {/* Auction Rules */}
@@ -178,7 +207,10 @@ const LiveAuctions = () => {
 
       <BiddingModal
         isOpen={isBiddingModalOpen}
-        onClose={() => setIsBiddingModalOpen(false)}
+        onClose={() => {
+          console.log('[BID] Closing modal');
+          setIsBiddingModalOpen(false);
+        }}
         property={selectedProperty}
       />
     </div>

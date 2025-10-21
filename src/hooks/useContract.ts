@@ -1,18 +1,11 @@
-import { useContract, useContractRead, useContractWrite } from 'wagmi';
+import { useReadContract, useWriteContract } from 'wagmi';
 import contractABI from '@/lib/contractABI.json';
 
-// Contract configuration
+// Contract configuration (v2: pass address/abi per call)
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0xB979D2a4D8795BffB02e987D45AaC9F562c070Be';
 
-export const useSecretBidContract = () => {
-  return useContract({
-    address: CONTRACT_ADDRESS as `0x${string}`,
-    abi: contractABI.abi,
-  });
-};
-
 export const usePropertyInfo = (propertyId: number) => {
-  return useContractRead({
+  return useReadContract({
     address: CONTRACT_ADDRESS as `0x${string}`,
     abi: contractABI.abi,
     functionName: 'getPropertyInfo',
@@ -21,7 +14,7 @@ export const usePropertyInfo = (propertyId: number) => {
 };
 
 export const usePropertyEncryptedData = (propertyId: number) => {
-  return useContractRead({
+  return useReadContract({
     address: CONTRACT_ADDRESS as `0x${string}`,
     abi: contractABI.abi,
     functionName: 'getPropertyEncryptedData',
@@ -30,7 +23,7 @@ export const usePropertyEncryptedData = (propertyId: number) => {
 };
 
 export const useBidEncryptedData = (bidId: number) => {
-  return useContractRead({
+  return useReadContract({
     address: CONTRACT_ADDRESS as `0x${string}`,
     abi: contractABI.abi,
     functionName: 'getBidEncryptedData',
@@ -39,25 +32,7 @@ export const useBidEncryptedData = (bidId: number) => {
 };
 
 export const usePlaceBid = () => {
-  return useContractWrite({
-    address: CONTRACT_ADDRESS as `0x${string}`,
-    abi: contractABI.abi,
-    functionName: 'placeBid',
-  });
+  // v2: returns writeContract fn; provide address/abi at call site
+  return useWriteContract();
 };
 
-export const useListProperty = () => {
-  return useContractWrite({
-    address: CONTRACT_ADDRESS as `0x${string}`,
-    abi: contractABI.abi,
-    functionName: 'listProperty',
-  });
-};
-
-export const useEndAuction = () => {
-  return useContractWrite({
-    address: CONTRACT_ADDRESS as `0x${string}`,
-    abi: contractABI.abi,
-    functionName: 'endAuction',
-  });
-};
