@@ -15,21 +15,21 @@ async function main() {
     {
       name: "Modern Luxury Villa",
       description: "Beverly Hills, CA",
-      imageHash: "src/assets/property-1.jpg",
+      imageHash: "/property-1.jpg",
       reservePrice: 100000, // $100,000 in cents
       duration: 259200 // 3 days in seconds
     },
     {
       name: "Downtown Penthouse", 
       description: "Manhattan, NY",
-      imageHash: "src/assets/property-2.jpg",
+      imageHash: "/property-2.jpg",
       reservePrice: 150000, // $150,000 in cents
       duration: 172800 // 2 days in seconds
     },
     {
       name: "Waterfront Estate",
       description: "Malibu, CA", 
-      imageHash: "src/assets/property-3.jpg",
+      imageHash: "/property-3.jpg",
       reservePrice: 200000, // $200,000 in cents
       duration: 432000 // 5 days in seconds
     }

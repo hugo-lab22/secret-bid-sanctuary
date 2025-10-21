@@ -47,15 +47,15 @@ const LiveAuctions = () => {
       const arr: any[] = [];
       for (let i = 0; i < count; i++) {
         const mapImagePath = (img: string | undefined, index: number) => {
-          if (!img) return `src/assets/property-${(index%3)+1}.jpg`;
+          if (!img) return `/property-${(index%3)+1}.jpg`;
           if (img.startsWith('ipfs://')) {
             const key = img.replace('ipfs://','');
             const dict: Record<string,string> = {
-              villa: 'src/assets/property-1.jpg',
-              pent: 'src/assets/property-2.jpg',
-              water: 'src/assets/property-3.jpg',
+              villa: '/property-1.jpg',
+              pent: '/property-2.jpg',
+              water: '/property-3.jpg',
             };
-            return dict[key] || `src/assets/property-${(index%3)+1}.jpg`;
+            return dict[key] || `/property-${(index%3)+1}.jpg`;
           }
           return img;
         };
@@ -108,7 +108,7 @@ const LiveAuctions = () => {
             title: `Property #${i}`,
             location: 'Encrypted Location',
             price: '$—',
-            image: `src/assets/property-${(i % 3) + 1}.jpg`,
+            image: `/property-${(i % 3) + 1}.jpg`,
             auctionEndTime: new Date(Date.now() + (i + 1) * 24 * 60 * 60 * 1000),
             currentBids: 0,
             isActive: true,
