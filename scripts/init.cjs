@@ -14,9 +14,17 @@ async function main() {
       console.log('Initializing FHE CLI API...');
       await fhevm.initializeCLIApi();
       console.log('FHE CLI API initialized successfully');
+    } else {
+      console.log('FHE plugin not available, trying alternative initialization...');
+      // Try to initialize FHE through hre
+      if (hre.fhevm && hre.fhevm.initializeCLIApi) {
+        await hre.fhevm.initializeCLIApi();
+        console.log('FHE initialized through hre');
+      }
     }
   } catch (err) {
     console.log('FHE initialization failed:', err.message);
+    console.log('Trying to continue without FHE...');
   }
 
   const [signer] = await ethers.getSigners();
@@ -24,10 +32,18 @@ async function main() {
 
   // Helper to encrypt reservePrice (uint32 cents) via hre.fhevm
   async function encryptReserve(priceCents) {
-    return hre.fhevm
-      .createEncryptedInput(CONTRACT_ADDRESS, signer.address)
-      .add32(priceCents)
-      .encrypt();
+    try {
+      console.log(`Encrypting reserve price: ${priceCents} cents`);
+      const result = await hre.fhevm
+        .createEncryptedInput(CONTRACT_ADDRESS, signer.address)
+        .add32(priceCents)
+        .encrypt();
+      console.log('Encryption successful');
+      return result;
+    } catch (error) {
+      console.error('FHE encryption failed:', error.message);
+      throw error;
+    }
   }
 
   // 3 properties to create

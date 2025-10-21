@@ -2,7 +2,7 @@ const hre = require('hardhat');
 const { ethers } = hre;
 
 async function main() {
-  console.log('Testing simple FHE operations...');
+  console.log('Testing FHE data format...');
   
   // Initialize FHE
   if (hre.fhevm && hre.fhevm.initializeCLIApi) {
@@ -10,7 +10,7 @@ async function main() {
     console.log('FHE initialized');
   }
 
-  // Use private key from environment variable
+  // Use private key from environment variable or default signer
   let signer;
   if (process.env.TEST_PRIVATE_KEY) {
     signer = new ethers.Wallet(process.env.TEST_PRIVATE_KEY, hre.ethers.provider);
@@ -24,41 +24,17 @@ async function main() {
   const CONTRACT_ADDRESS = deployment.contractAddress;
 
   try {
-    console.log('Creating encrypted input...');
+    // Create encrypted input
     const input = hre.fhevm.createEncryptedInput(CONTRACT_ADDRESS, signer.address);
-    input.add32(BigInt(1000000)); // 1 million cents = $10,000
+    input.add32(1000000); // 1 million cents = $10,000
     const encrypted = await input.encrypt();
     
     console.log('Encrypted handles:', encrypted.handles);
     console.log('Input proof length:', encrypted.inputProof.length);
+    console.log('First handle format:', encrypted.handles[0]);
     
     // Test contract call
-    console.log('Calling contract...');
     const contract = await ethers.getContractAt('SecretBidSanctuary', CONTRACT_ADDRESS, signer);
-    
-    // First, let's check if property 0 exists
-    try {
-      const property = await contract.getProperty(0);
-      console.log('Property 0 exists:', property);
-    } catch (error) {
-      console.log('Property 0 does not exist, trying to create it first...');
-      
-      // Create a property first
-      const input = hre.fhevm.createEncryptedInput(CONTRACT_ADDRESS, signer.address);
-      input.add32(BigInt(1000000)); // $10,000 reserve price
-      const encryptedReserve = await input.encrypt();
-      
-      const createTx = await contract.listProperty(
-        "Test Property",
-        "A test property for FHE testing",
-        "test-image.jpg",
-        encryptedReserve.handles[0],
-        24 * 3600, // 24 hours
-        encryptedReserve.inputProof
-      );
-      await createTx.wait();
-      console.log('Property created successfully');
-    }
     
     const tx = await contract.placeBid(
       0, // property ID
@@ -72,7 +48,6 @@ async function main() {
     
   } catch (error) {
     console.error('❌ Test failed:', error.message);
-    console.error('Full error:', error);
   }
 }
 
