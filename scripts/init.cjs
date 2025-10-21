@@ -1,77 +1,90 @@
-const hre = require('hardhat');
-const { ethers } = hre;
-const fs = require('fs');
+const { ethers } = require("hardhat");
 
 async function main() {
-  const deployment = JSON.parse(fs.readFileSync('deployment-info.json','utf8'));
-  const CONTRACT_ADDRESS = deployment.contractAddress;
-
-  // FHE CLI init (best-effort)
-  let fhevm;
-  try {
-    ({ fhevm } = require('@fhevm/hardhat-plugin'));
-    if (fhevm && fhevm.initializeCLIApi) {
-      console.log('Initializing FHE CLI API...');
-      await fhevm.initializeCLIApi();
-      console.log('FHE CLI API initialized successfully');
-    } else {
-      console.log('FHE plugin not available, trying alternative initialization...');
-      // Try to initialize FHE through hre
-      if (hre.fhevm && hre.fhevm.initializeCLIApi) {
-        await hre.fhevm.initializeCLIApi();
-        console.log('FHE initialized through hre');
-      }
+  console.log("🚀 Initializing new contract with public reservePrice and bidCount...");
+  
+  // Get the contract
+  const contractAddress = "0x7F6dfA7EacC6E696A93756fB7f8f78b1C7cfC80a";
+  const SecretBidSanctuary = await ethers.getContractFactory("SecretBidSanctuary");
+  const contract = SecretBidSanctuary.attach(contractAddress);
+  
+  console.log("📋 Contract address:", contractAddress);
+  
+  // Create some test properties with public reserve prices
+  const properties = [
+    {
+      name: "Modern Luxury Villa",
+      description: "Beverly Hills, CA",
+      imageHash: "src/assets/property-1.jpg",
+      reservePrice: 100000, // $100,000 in cents
+      duration: 259200 // 3 days in seconds
+    },
+    {
+      name: "Downtown Penthouse", 
+      description: "Manhattan, NY",
+      imageHash: "src/assets/property-2.jpg",
+      reservePrice: 150000, // $150,000 in cents
+      duration: 172800 // 2 days in seconds
+    },
+    {
+      name: "Waterfront Estate",
+      description: "Malibu, CA", 
+      imageHash: "src/assets/property-3.jpg",
+      reservePrice: 200000, // $200,000 in cents
+      duration: 432000 // 5 days in seconds
     }
-  } catch (err) {
-    console.log('FHE initialization failed:', err.message);
-    console.log('Trying to continue without FHE...');
-  }
-
-  const [signer] = await ethers.getSigners();
-  const contract = await ethers.getContractAt('SecretBidSanctuary', CONTRACT_ADDRESS, signer);
-
-  // Helper to encrypt reservePrice (uint32 cents) via hre.fhevm
-  async function encryptReserve(priceCents) {
-    try {
-      console.log(`Encrypting reserve price: ${priceCents} cents`);
-      const result = await hre.fhevm
-        .createEncryptedInput(CONTRACT_ADDRESS, signer.address)
-        .add32(priceCents)
-        .encrypt();
-      console.log('Encryption successful');
-      return result;
-    } catch (error) {
-      console.error('FHE encryption failed:', error.message);
-      throw error;
-    }
-  }
-
-  // 3 properties to create
-  const props = [
-    { name: 'Modern Luxury Villa', desc: 'Beverly Hills, CA', img: 'src/assets/property-1.jpg', reserveUsd: 2850000, duration: 3*24*3600 },
-    { name: 'Downtown Penthouse', desc: 'Manhattan, NY', img: 'src/assets/property-2.jpg', reserveUsd: 4200000, duration: 2*24*3600 },
-    { name: 'Waterfront Estate', desc: 'Malibu, CA', img: 'src/assets/property-3.jpg', reserveUsd: 6750000, duration: 5*24*3600 },
   ];
-
-  for (const p of props) {
-    const cents = Math.floor(p.reserveUsd * 100);
-    const enc = await encryptReserve(cents);
-    const handle = enc.handles[0];
-    const inputProof = enc.inputProof;
-
-    const tx = await contract.listProperty(
-      p.name,
-      p.desc,
-      p.img,
-      handle,
-      p.duration,
-      inputProof
-    );
-    console.log('listProperty tx:', tx.hash);
-    await tx.wait();
+  
+  console.log("🏠 Creating test properties...");
+  
+  for (let i = 0; i < properties.length; i++) {
+    const prop = properties[i];
+    console.log(`\n📝 Creating property ${i + 1}: ${prop.name}`);
+    
+    try {
+      const tx = await contract.listProperty(
+        prop.name,
+        prop.description, 
+        prop.imageHash,
+        prop.reservePrice,
+        prop.duration
+      );
+      
+      console.log(`   ✅ Transaction hash: ${tx.hash}`);
+      await tx.wait();
+      console.log(`   ✅ Property ${i + 1} created successfully`);
+      
+    } catch (error) {
+      console.error(`   ❌ Error creating property ${i + 1}:`, error.message);
+    }
   }
-
-  console.log('Initialized 3 properties with encrypted reserve prices.');
+  
+  // Verify properties were created
+  console.log("\n🔍 Verifying properties...");
+  
+  for (let i = 0; i < properties.length; i++) {
+    try {
+      const info = await contract.getPropertyInfo(i);
+      console.log(`\n📊 Property ${i} info:`);
+      console.log(`   Name: ${info[0]}`);
+      console.log(`   Description: ${info[1]}`);
+      console.log(`   Reserve Price: $${Number(info[3]) / 100}`); // Convert from cents
+      console.log(`   Bid Count: ${info[5]}`);
+      console.log(`   Is Active: ${info[6]}`);
+      console.log(`   End Time: ${new Date(Number(info[11]) * 1000).toLocaleString()}`);
+      
+    } catch (error) {
+      console.error(`   ❌ Error reading property ${i}:`, error.message);
+    }
+  }
+  
+  console.log("\n✅ Contract initialization completed!");
+  console.log("🎯 Now reservePrice and bidCount are public and should display correctly in the frontend");
 }
 
-main().catch((e)=>{ console.error(e); process.exit(1);});
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error("❌ Script failed:", error);
+    process.exit(1);
+  });
