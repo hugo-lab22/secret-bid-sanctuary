@@ -66,6 +66,7 @@ const LiveAuctions = () => {
             abi: contractABI.abi as any,
             functionName: 'getPropertyEncryptedData',
             args: [BigInt(i)],
+            authorizationList: [],
           });
           console.log('[DATA] [Live] getPropertyEncryptedData(', i, ')=', encryptedData);
           
@@ -73,13 +74,13 @@ const LiveAuctions = () => {
             id: String(i),
             title: name || `Property #${i}`,
             location: description || 'Encrypted Location',
-            price: '$—', // Will be decrypted off-chain
+            price: `$${(Number(reservePrice) / 100).toLocaleString()}`, // Show actual reserve price
             image: mapImagePath(imageHash, i),
             auctionEndTime: new Date(Number(endTime) * 1000), // Convert from seconds to milliseconds
             currentBids: Number(bidCount) || 0,
             isActive: isActive,
-            lastBidAmount: '$—', // Will be decrypted off-chain
-            minimumBid: '$100,000', // Set a reasonable minimum bid
+            lastBidAmount: `$${(Number(currentBid) / 100).toLocaleString()}`, // Show actual current bid
+            minimumBid: `$${(Number(reservePrice) / 100).toLocaleString()}`, // Show actual reserve price as minimum
             encryptedData: encryptedData, // Store encrypted data for potential decryption
           };
           console.log('[DATA] [Live] mapped property', i, 'isActive:', mapped.isActive, 'bidCount:', mapped.currentBids);
