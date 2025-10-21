@@ -86,7 +86,7 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
     
     try {
       const CONTRACT_ADDRESS = '0xe737695242bC565408F1258B764A1c21a1BcE19f'; // Latest deployed contract address
-      const bidAmountValue = Math.floor(parseFloat(bidAmount.replace(/[,$]/g, "")) * 100); // Convert to cents for euint32
+      const bidAmountValue = BigInt(Math.floor(parseFloat(bidAmount.replace(/[,$]/g, "")) * 100)); // Convert to cents for euint32
       
       console.log('[BID] Starting FHE encryption for amount:', bidAmountValue);
       console.log('[BID] Property data:', property);
