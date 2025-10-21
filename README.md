@@ -8,6 +8,12 @@
 
 ---
 
+## 🎥 Demo Video
+
+[![Secret Bid Sanctuary Demo](https://img.shields.io/badge/📹-Watch%20Demo-red.svg)](./secret-bid-sanctuary.mov)
+
+**Watch our comprehensive demo showcasing the complete FHE bidding system in action!**
+
 ## 🌟 Vision
 
 In a world where privacy is paramount, Secret Bid Sanctuary revolutionizes property auctions through **Fully Homomorphic Encryption (FHE)** technology. Our platform ensures that your bid amounts remain completely confidential until the auction concludes, creating a truly fair and transparent marketplace.
@@ -21,6 +27,65 @@ Traditional auction platforms expose bid amounts, creating opportunities for man
 - **🛡️ Tamper-Proof**: Cryptographic guarantees prevent bid manipulation  
 - **⚡ Real-Time Processing**: FHE enables computation on encrypted data
 - **🎯 Fair Outcomes**: True market value discovery without information leakage
+
+### FHE Encryption Implementation
+
+#### **Frontend Encryption Process**
+```typescript
+// 1. Initialize FHE instance
+const instance = await createInstance({
+  chainId: 11155111,
+  publicKey: publicKey,
+});
+
+// 2. Encrypt bid amount
+const bidAmountValue = BigInt(Math.floor(parseFloat(bidAmount) * 100));
+const encryptedAmount = instance.encrypt(bidAmountValue);
+
+// 3. Create FHE call parameters
+const { handles, inputProof } = await instance.createFhevmCallParams(
+  propertyId,
+  encryptedAmount,
+  signerPromise
+);
+
+// 4. Submit encrypted bid to contract
+await writeContract({
+  address: contractAddress,
+  abi: contractABI.abi,
+  functionName: 'placeBid',
+  args: [BigInt(propertyId), handles[0], inputProof],
+});
+```
+
+#### **Smart Contract FHE Operations**
+```solidity
+// Convert external encrypted data to internal format
+euint32 internalAmount = FHE.fromExternal(amount, inputProof);
+
+// Set access control permissions
+FHE.allowThis(bids[bidId].amount);
+FHE.allow(bids[bidId].amount, msg.sender);
+
+// Store encrypted bid data
+bids[bidId] = Bid({
+    bidId: FHE.asEuint32(uint32(bidId)),
+    amount: internalAmount,  // Encrypted bid amount
+    bidder: msg.sender,
+    timestamp: block.timestamp,
+    isRevealed: false
+});
+```
+
+#### **Off-Chain Decryption**
+```typescript
+// Retrieve encrypted data from contract
+const encryptedData = await contract.getPropertyEncryptedData(propertyId);
+
+// Decrypt using FHE instance
+const decryptedAmount = instance.decrypt(encryptedData.currentBid);
+console.log('Decrypted bid amount:', Number(decryptedAmount) / 100);
+```
 
 ## 🏗️ Architecture Overview
 
@@ -99,6 +164,100 @@ NEXT_PUBLIC_CONTRACT_ADDRESS=deployed_contract_address
 - **🌐 Decentralized**: No single point of failure
 - **📈 Transparent**: All operations verifiable on-chain
 
+## 🔐 Smart Contract Architecture
+
+### Core Contract: SecretBidSanctuary.sol
+
+Our smart contract implements FHE-powered private bidding with the following key features:
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import { SepoliaConfig } from "@fhevm/solidity/config/ZamaConfig.sol";
+import { euint32, externalEuint32, euint8, ebool, eaddress, FHE } from "@fhevm/solidity/lib/FHE.sol";
+
+contract SecretBidSanctuary is SepoliaConfig {
+    using FHE for *;
+    
+    struct Property {
+        euint32 propertyId;
+        uint32 reservePrice;  // Public information, no encryption needed
+        euint32 currentBid;   // Only current highest bid needs encryption
+        uint32 bidCount;      // Public information, no encryption needed
+        bool isActive;
+        bool isVerified;
+        string name;
+        string description;
+        string imageHash;
+        address owner;
+        address highestBidder;
+        uint256 startTime;
+        uint256 endTime;
+    }
+    
+    struct Bid {
+        euint32 bidId;
+        euint32 amount;       // Encrypted bid amount
+        address bidder;
+        uint256 timestamp;
+        bool isRevealed;
+    }
+}
+```
+
+### Key Encryption Logic
+
+#### 1. **Encrypted Bid Submission**
+```solidity
+function placeBid(
+    uint256 propertyId,
+    externalEuint32 amount,
+    bytes calldata inputProof
+) public returns (uint256) {
+    // Convert externalEuint32 to euint32 using FHE.fromExternal
+    euint32 internalAmount = FHE.fromExternal(amount, inputProof);
+    
+    // Set ACL permissions for the encrypted bid amount
+    FHE.allowThis(bids[bidId].amount);
+    FHE.allow(bids[bidId].amount, msg.sender);
+    
+    // Store encrypted bid
+    bids[bidId] = Bid({
+        bidId: FHE.asEuint32(uint32(bidId)),
+        amount: internalAmount,
+        bidder: msg.sender,
+        timestamp: block.timestamp,
+        isRevealed: false
+    });
+}
+```
+
+#### 2. **Access Control List (ACL) Management**
+```solidity
+// Set permissions for encrypted data access
+FHE.allowThis(bids[bidId].amount);           // Allow contract to access
+FHE.allow(bids[bidId].amount, msg.sender);   // Allow bidder to access
+```
+
+#### 3. **Encrypted Data Retrieval**
+```solidity
+function getPropertyEncryptedData(uint256 propertyId) public view returns (
+    bytes32 currentBid
+) {
+    Property storage property = properties[propertyId];
+    return (
+        FHE.toBytes32(property.currentBid)  // Return encrypted bid for off-chain decryption
+    );
+}
+```
+
+### Contract Deployment
+
+**Current Contract Address**: `0x7F6dfA7EacC6E696A93756fB7f8f78b1C7cfC80a`  
+**Network**: Sepolia Testnet  
+**Verification**: [View on Etherscan](https://sepolia.etherscan.io/address/0x7F6dfA7EacC6E696A93756fB7f8f78b1C7cfC80a)
+
 ## 🛠️ Technology Stack
 
 ### Frontend
@@ -163,7 +322,46 @@ npx hardhat compile
 npx hardhat test
 
 # Deploy to testnet
-npm run deploy:contract
+npx hardhat run scripts/deploy.cjs --network sepolia
+
+# Initialize contract with test data
+npx hardhat run scripts/init.cjs --network sepolia
+
+# Test contract functions
+npx hardhat run scripts/test-contract-query.cjs --network sepolia
+```
+
+### Contract Deployment Commands
+
+```bash
+# 1. Deploy the contract
+npx hardhat run scripts/deploy.cjs --network sepolia
+
+# 2. Initialize with test properties
+npx hardhat run scripts/init.cjs --network sepolia
+
+# 3. Verify contract on Etherscan
+npx hardhat run scripts/verify.cjs --network sepolia
+
+# 4. Test contract queries
+npx hardhat run scripts/test-contract-query.cjs --network sepolia
+```
+
+### Environment Configuration
+
+Create `.env` file with the following variables:
+
+```env
+# Network Configuration
+SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_API_KEY
+PRIVATE_KEY=your_private_key_here
+ETHERSCAN_API_KEY=your_etherscan_api_key
+
+# Frontend Configuration
+VITE_CHAIN_ID=11155111
+VITE_RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_API_KEY
+VITE_WALLET_CONNECT_PROJECT_ID=your_wallet_connect_project_id
+VITE_CONTRACT_ADDRESS=0x7F6dfA7EacC6E696A93756fB7f8f78b1C7cfC80a
 ```
 
 ## 🚀 Deployment
@@ -190,6 +388,64 @@ npm run build
 - **🔒 Security**: 256-bit encryption standard
 - **📱 Mobile**: 95+ Lighthouse score
 - **🌐 Uptime**: 99.9% availability target
+
+## 🔬 Technical Features
+
+### FHE Implementation Details
+
+#### **Encryption Standards**
+- **Key Size**: 256-bit encryption keys
+- **Algorithm**: TFHE (Torus Fully Homomorphic Encryption)
+- **Security Level**: 128-bit security parameter
+- **Performance**: Optimized for real-time bidding
+
+#### **Access Control List (ACL)**
+```solidity
+// Granular permission management
+FHE.allowThis(encryptedData);           // Contract access
+FHE.allow(encryptedData, userAddress);  // User-specific access
+FHE.allow(encryptedData, verifier);    // Verifier access
+```
+
+#### **Data Privacy Guarantees**
+- **Bid Amounts**: Fully encrypted until auction end
+- **User Identity**: Pseudonymous bidding
+- **Transaction History**: Encrypted audit trail
+- **Settlement**: Privacy-preserving fund transfer
+
+### Frontend Architecture
+
+#### **React Hooks for FHE**
+```typescript
+// Custom hook for FHE instance management
+const { instance, isInitialized } = useZamaInstance();
+
+// Custom hook for contract interactions
+const { writeContract, readContract } = useContract();
+
+// Custom hook for encrypted bid submission
+const { submitEncryptedBid } = useEncryptedBidding();
+```
+
+#### **State Management**
+- **Encrypted State**: FHE-encrypted bid data
+- **Public State**: Property information, auction status
+- **User State**: Wallet connection, reputation
+- **Contract State**: On-chain auction data
+
+### Security Measures
+
+#### **Multi-Layer Security**
+1. **Frontend**: Client-side encryption with FHE
+2. **Network**: HTTPS/WSS secure communication
+3. **Blockchain**: Immutable encrypted storage
+4. **Access Control**: Granular permission management
+
+#### **Audit Trail**
+- **Encrypted Logs**: All bid activities logged
+- **Verification**: Cryptographic proof of bid integrity
+- **Settlement**: Transparent fund distribution
+- **Compliance**: Regulatory-ready audit capabilities
 
 ## 🤝 Contributing
 
