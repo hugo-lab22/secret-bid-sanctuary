@@ -70,7 +70,7 @@ const LiveAuctions = () => {
             abi: contractABI.abi as any,
             functionName: 'getPropertyInfo',
             args: [BigInt(i)],
-            authorizationList: [],
+            authorizationList: undefined,
           });
           console.log('[DATA] [Live] getPropertyInfo(', i, ')=', info);
           const [name, description, imageHash, reservePrice, currentBid, bidCount, isActive, isVerified, propertyOwner, highestBidder, startTime, endTime] = info as any;
@@ -82,7 +82,7 @@ const LiveAuctions = () => {
             abi: contractABI.abi as any,
             functionName: 'getPropertyEncryptedData',
             args: [BigInt(i)],
-            authorizationList: [],
+            authorizationList: undefined,
           });
           console.log('[DATA] [Live] getPropertyEncryptedData(', i, ')=', encryptedData);
           
