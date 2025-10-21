@@ -11,9 +11,13 @@ async function main() {
   try {
     ({ fhevm } = require('@fhevm/hardhat-plugin'));
     if (fhevm && fhevm.initializeCLIApi) {
+      console.log('Initializing FHE CLI API...');
       await fhevm.initializeCLIApi();
+      console.log('FHE CLI API initialized successfully');
     }
-  } catch (_) {}
+  } catch (err) {
+    console.log('FHE initialization failed:', err.message);
+  }
 
   const [signer] = await ethers.getSigners();
   const contract = await ethers.getContractAt('SecretBidSanctuary', CONTRACT_ADDRESS, signer);

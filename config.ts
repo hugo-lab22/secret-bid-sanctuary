@@ -11,5 +11,5 @@ export const config = {
   alternativeRpcUrl: "https://1rpc.io/sepolia",
 
   // Contract Configuration
-  contractAddress: (import.meta.env.VITE_CONTRACT_ADDRESS as string) || "",
+  contractAddress: (import.meta.env.VITE_CONTRACT_ADDRESS as string) || "0xe737695242bC565408F1258B764A1c21a1BcE19f",
 } as const;
