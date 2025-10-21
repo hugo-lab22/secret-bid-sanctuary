@@ -44,6 +44,7 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
     }
   }, [error, toast]);
 
+  // Early return after all hooks are called
   if (!property) {
     console.log('[BID] No property provided to modal');
     return null;
@@ -165,16 +166,6 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
     }
   }, [isSuccess, toast, onClose]);
 
-  // Handle transaction error
-  useEffect(() => {
-    if (error) {
-      toast({
-        title: "Transaction Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  }, [error, toast]);
 
   const formatCurrency = (value: string) => {
     const numericValue = value.replace(/[^0-9]/g, "");
