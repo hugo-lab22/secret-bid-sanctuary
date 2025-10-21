@@ -31,6 +31,19 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
     hash,
   });
 
+  // Handle writeContract errors
+  useEffect(() => {
+    if (error) {
+      console.error('[BID] writeContract error:', error);
+      toast({
+        title: "Transaction Failed",
+        description: error.message || "Failed to place bid. Please try again.",
+        variant: "destructive",
+      });
+      setSubmitting(false);
+    }
+  }, [error, toast]);
+
   if (!property) {
     console.log('[BID] No property provided to modal');
     return null;
@@ -139,19 +152,6 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
       setSubmitting(false);
     }
   };
-
-  // Handle writeContract errors
-  useEffect(() => {
-    if (error) {
-      console.error('[BID] writeContract error:', error);
-      toast({
-        title: "Transaction Failed",
-        description: error.message || "Failed to place bid. Please try again.",
-        variant: "destructive",
-      });
-      setSubmitting(false);
-    }
-  }, [error, toast]);
 
   // Handle transaction success
   if (isSuccess) {
