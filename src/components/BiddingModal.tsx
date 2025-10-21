@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,6 +113,12 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
       });
       
       // Call contract with encrypted data (no payment required)
+      console.log('[BID] Calling writeContract with args:', {
+        propertyId: BigInt(property.id),
+        handle: handles[0],
+        proofLength: inputProof.length
+      });
+      
       writeContract({
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: contractABI.abi as any,
@@ -133,6 +139,19 @@ export function BiddingModal({ isOpen, onClose, property }: BiddingModalProps) {
       setSubmitting(false);
     }
   };
+
+  // Handle writeContract errors
+  useEffect(() => {
+    if (error) {
+      console.error('[BID] writeContract error:', error);
+      toast({
+        title: "Transaction Failed",
+        description: error.message || "Failed to place bid. Please try again.",
+        variant: "destructive",
+      });
+      setSubmitting(false);
+    }
+  }, [error, toast]);
 
   // Handle transaction success
   if (isSuccess) {
