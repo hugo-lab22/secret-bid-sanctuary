@@ -2,7 +2,7 @@ import { useReadContract, useWriteContract } from 'wagmi';
 import contractABI from '@/lib/contractABI.json';
 
 // Contract configuration (v2: pass address/abi per call)
-const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0xe737695242bC565408F1258B764A1c21a1BcE19f';
+const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0x9b7BaD82c80fC119C6b8894BE7B060Ad4745c80d';
 
 export const usePropertyInfo = (propertyId: number) => {
   return useReadContract({
