@@ -2,7 +2,7 @@
 export const config = {
   // Chain Configuration
   chainId: Number(import.meta.env.VITE_CHAIN_ID || 11155111), // Sepolia Testnet
-  rpcUrl: (import.meta.env.VITE_RPC_URL as string) || "https://1rpc.io/sepolia",
+  rpcUrl: (import.meta.env.VITE_RPC_URL as string) || "https://sepolia.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
 
   // Wallet Connect Configuration
   walletConnectProjectId: (import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID as string) || "",
